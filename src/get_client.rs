@@ -1,47 +1,22 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default)]
-struct Client {
+pub struct GetClient {
     url: String,
     api_key: String,
     user: String,
     password: String,
 }
 
-#[derive(Debug, Default)]
-struct GetClient {
-    client: Client,
-}
-
 impl GetClient {
-    fn new() -> Self {
-        Self::default()
+    pub fn builder() -> GetClientBuilder {
+        GetClientBuilder::default()
     }
-    fn url(self, url: String) -> Self {
-        Self {
-            client: Client {
-                url: url,
-                api_key: self.client.api_key,
-                user: self.client.user,
-                password: self.client.password,
-            },
-        }
-    }
-    fn key(self, key: String) -> Self {
-        Self {
-            client: Client {
-                url: self.client.url,
-                api_key: key,
-                user: self.client.user,
-                password: self.client.password,
-            },
-        }
-    }
-    async fn send(&self) {
+    pub async fn send(self) {
         let client = reqwest::Client::new();
         let response = client
-            .get(&self.client.url)
-            .header("X-Redmine-API-Key", &self.client.api_key)
+            .get(self.url)
+            .header("X-Redmine-API-Key", self.api_key)
             .send()
             .await
             .unwrap();
@@ -54,6 +29,44 @@ impl GetClient {
             println!("{}", issue.subject);
             println!("{}", issue.project.name);
             println!("{}", issue.author.name);
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct GetClientBuilder {
+    url: String,
+    api_key: String,
+    user: String,
+    password: String,
+}
+
+impl GetClientBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn url(mut self, url: String) -> Self {
+        self.url = url;
+        self
+    }
+    pub fn key(mut self, key: String) -> Self {
+        self.api_key = key;
+        self
+    }
+    pub fn user(mut self, user: String) -> Self {
+        self.user = user;
+        self
+    }
+    pub fn password(mut self, password: String) -> Self {
+        self.password = password;
+        self
+    }
+    pub fn build(self) -> GetClient {
+        GetClient {
+            url: self.url,
+            api_key: self.api_key,
+            user: self.user,
+            password: self.password,
         }
     }
 }
@@ -114,6 +127,6 @@ enum CustomField {
 async fn test_struct() {
     let url = "http://localhost:8080/projects/alpha/issues.json".to_string();
     let key = "f111fc80e00156d8fe0ac520a2ea7b21a5d984be".to_string();
-    let client = GetClient::new();
-    let result = client.url(url).key(key).send().await;
+    let client = GetClient::builder().url(url).key(key).build();
+    let response = client.send().await;
 }
