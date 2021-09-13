@@ -45,16 +45,16 @@ impl GetClientBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn url(mut self, url: String) -> Self {
-        self.url = url;
+    pub fn url(mut self, url: impl Into<String>) -> Self {
+        self.url = url.into();
         self
     }
-    pub fn key(mut self, key: String) -> Self {
-        self.api_key = key;
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.api_key = key.into();
         self
     }
-    pub fn user(mut self, user: String) -> Self {
-        self.user = user;
+    pub fn user(mut self, user: impl Into<String>) -> Self {
+        self.user = user.into();
         self
     }
     pub fn password(mut self, password: String) -> Self {
@@ -125,8 +125,8 @@ enum CustomField {
 
 #[tokio::test]
 async fn test_struct() {
-    let url = "http://localhost:8080/projects/alpha/issues.json".to_string();
-    let key = "f111fc80e00156d8fe0ac520a2ea7b21a5d984be".to_string();
+    let url = "http://localhost:8080/projects/alpha/issues.json";
+    let key = "f111fc80e00156d8fe0ac520a2ea7b21a5d984be";
     let client = GetClient::builder().url(url).key(key).build();
     let response = client.send().await;
 }
