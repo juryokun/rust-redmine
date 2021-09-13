@@ -12,24 +12,17 @@ impl GetClient {
     pub fn builder() -> GetClientBuilder {
         GetClientBuilder::default()
     }
-    pub async fn send(self) {
+    pub async fn send(self) -> Result<Issues, Box<dyn std::error::Error>> {
         let client = reqwest::Client::new();
         let response = client
             .get(self.url)
             .header("X-Redmine-API-Key", self.api_key)
             .send()
-            .await
-            .unwrap();
-        println!("{:?}", response);
-        let result = response.text().await.unwrap();
+            .await?;
+        let result = response.text().await?;
 
-        let issues: Issues = serde_json::from_str(&result).unwrap();
-        // println!("{:?}", issues);
-        for issue in issues.issues.iter() {
-            println!("{}", issue.subject);
-            println!("{}", issue.project.name);
-            println!("{}", issue.author.name);
-        }
+        let issues: Issues = serde_json::from_str(&result)?;
+        Ok(issues)
     }
 }
 
@@ -72,7 +65,7 @@ impl GetClientBuilder {
 }
 
 #[derive(Debug, Deserialize)]
-struct Issues {
+pub struct Issues {
     issues: Vec<Issue>,
     total_count: i64,
     offset: i64,
@@ -124,6 +117,7 @@ enum CustomField {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_struct() {
     let url = "http://localhost:8080/projects/alpha/issues.json";
     let key = "f111fc80e00156d8fe0ac520a2ea7b21a5d984be";
