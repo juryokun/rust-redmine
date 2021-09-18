@@ -119,8 +119,12 @@ enum CustomField {
 #[tokio::test]
 #[ignore]
 async fn test_struct() {
-    let url = "http://localhost:8080/projects/alpha/issues.json";
-    let key = "f111fc80e00156d8fe0ac520a2ea7b21a5d984be";
+    let url = "http://localhost:8000/projects/prj1/issues.json";
+    let key = "d1b2c51db3fa1d6277b2e775447b05a58a1b5011";
     let client = GetClient::builder().url(url).key(key).build();
     let response = client.send().await;
+    match response {
+        Ok(rel) => println!("{:?}", rel),
+        _ => println!("no"),
+    }
 }
