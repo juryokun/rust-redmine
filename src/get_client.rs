@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct GetClient {
     url: String,
     api_key: String,
     user: String,
     password: String,
+    cert_file_path: String,
 }
 
 impl GetClient {
@@ -13,7 +14,13 @@ impl GetClient {
         GetClientBuilder::default()
     }
     pub async fn send(self) -> Result<Issues, Box<dyn std::error::Error>> {
-        let client = reqwest::Client::new();
+        let client = match self.cert_file_path.is_empty() {
+            true => reqwest::Client::new(),
+            false => reqwest::Client::builder()
+                .add_root_certificate(self.get_cert()?)
+                .build()?,
+        };
+
         let response = client
             .get(self.url)
             .header("X-Redmine-API-Key", self.api_key)
@@ -24,6 +31,13 @@ impl GetClient {
         let issues: Issues = serde_json::from_str(&result)?;
         Ok(issues)
     }
+    fn get_cert(&self) -> Result<reqwest::Certificate, Box<dyn std::error::Error>> {
+        use std::io::Read;
+        let mut buf = Vec::new();
+        std::fs::File::open(self.cert_file_path.clone())?.read_to_end(&mut buf)?;
+        let cert = reqwest::Certificate::from_der(&buf)?;
+        Ok(cert)
+    }
 }
 
 #[derive(Debug, Default)]
@@ -32,6 +46,7 @@ pub struct GetClientBuilder {
     api_key: String,
     user: String,
     password: String,
+    cert_file_path: String,
 }
 
 impl GetClientBuilder {
@@ -60,6 +75,7 @@ impl GetClientBuilder {
             api_key: self.api_key,
             user: self.user,
             password: self.password,
+            cert_file_path: self.cert_file_path,
         }
     }
 }
