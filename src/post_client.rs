@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 pub struct PostClient {
     url: String,
     api_key: String,
-    user: String,
-    password: String,
+    // user: String,
+    // password: String,
     data: NewIssue,
 }
 
@@ -32,8 +32,8 @@ impl PostClient {
 pub struct PostClientBuilder {
     url: String,
     api_key: String,
-    user: String,
-    password: String,
+    // user: String,
+    // password: String,
     data: NewIssue,
 }
 
@@ -41,28 +41,28 @@ impl PostClientBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn url(mut self, url: String) -> Self {
-        self.url = url;
+    pub fn url(mut self, url: impl Into<String>) -> Self {
+        self.url = url.into();
         self
     }
-    pub fn key(mut self, key: String) -> Self {
-        self.api_key = key;
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.api_key = key.into();
         self
     }
-    pub fn user(mut self, user: String) -> Self {
-        self.user = user;
-        self
-    }
-    pub fn password(mut self, password: String) -> Self {
-        self.password = password;
-        self
-    }
+    // pub fn user(mut self, user: impl Into<String>) -> Self {
+    //     self.user = user.into();
+    //     self
+    // }
+    // pub fn password(mut self, password: impl Into<String>) -> Self {
+    //     self.password = password.into();
+    //     self
+    // }
     pub fn build(self) -> PostClient {
         PostClient {
             url: self.url,
             api_key: self.api_key,
-            user: self.user,
-            password: self.password,
+            // user: self.user,
+            // password: self.password,
             data: self.data,
         }
     }

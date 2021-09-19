@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 pub struct GetClient {
     url: String,
     api_key: String,
-    user: String,
-    password: String,
+    // user: String,
+    // password: String,
     cert_file_path: String,
     insecure: bool,
 }
@@ -47,8 +47,8 @@ impl GetClient {
 pub struct GetClientBuilder {
     url: String,
     api_key: String,
-    user: String,
-    password: String,
+    // user: String,
+    // password: String,
     cert_file_path: String,
     insecure: bool,
 }
@@ -68,14 +68,14 @@ impl GetClientBuilder {
         self.api_key = key.into();
         self
     }
-    pub fn user(mut self, user: impl Into<String>) -> Self {
-        self.user = user.into();
-        self
-    }
-    pub fn password(mut self, password: impl Into<String>) -> Self {
-        self.password = password.into();
-        self
-    }
+    // pub fn user(mut self, user: impl Into<String>) -> Self {
+    //     self.user = user.into();
+    //     self
+    // }
+    // pub fn password(mut self, password: impl Into<String>) -> Self {
+    //     self.password = password.into();
+    //     self
+    // }
     pub fn cert_file_path(mut self, cert_file_path: impl Into<String>) -> Self {
         self.cert_file_path = cert_file_path.into();
         self
@@ -88,8 +88,8 @@ impl GetClientBuilder {
         GetClient {
             url: self.url,
             api_key: self.api_key,
-            user: self.user,
-            password: self.password,
+            // user: self.user,
+            // password: self.password,
             cert_file_path: self.cert_file_path,
             insecure: self.insecure,
         }
