@@ -154,41 +154,41 @@ impl NewIssue {
     pub fn set_estimated_hours(&mut self, estimated_hours: i64) {
         self.issue.estimated_hours = estimated_hours;
     }
-    pub fn set_customer_field_value(&mut self, field_id: i64, field_value: impl Into<String>) {
-        let customer_field = NewCustomField::NewItemTwo {
+    pub fn set_custom_field_value(&mut self, field_id: i64, field_value: impl Into<String>) {
+        let custom_field = NewCustomField::NewItemTwo {
             id: field_id,
             value: field_value.into(),
         };
-        self.update_customer_field(customer_field);
+        self.update_custom_field(custom_field);
     }
-    pub fn set_customer_field_multiple_value(
+    pub fn set_custom_field_multiple_value(
         &mut self,
         field_id: i64,
         field_values: Vec<impl Into<String>>,
     ) {
-        let customer_field = NewCustomField::NewItemMultiple {
+        let custom_field = NewCustomField::NewItemMultiple {
             id: field_id,
             value: field_values.into_iter().map(|x| x.into()).collect(),
         };
-        self.update_customer_field(customer_field);
+        self.update_custom_field(custom_field);
     }
-    fn update_customer_field(&mut self, customer_field: NewCustomField) {
-        let field_id = NewIssue::extract_customer_field_id(&customer_field);
+    fn update_custom_field(&mut self, custom_field: NewCustomField) {
+        let field_id = NewIssue::extract_custom_field_id(&custom_field);
 
         let mut target_id: isize = -1;
         for (i, field) in self.issue.custom_fields.iter().enumerate() {
-            let id = NewIssue::extract_customer_field_id(field);
+            let id = NewIssue::extract_custom_field_id(field);
             if id == field_id {
                 target_id = i as isize;
                 break;
             }
         }
         if target_id != -1 {
-            self.issue.custom_fields[target_id as usize] = customer_field;
+            self.issue.custom_fields[target_id as usize] = custom_field;
         }
     }
-    fn extract_customer_field_id(customer_field: &NewCustomField) -> i64 {
-        match customer_field {
+    fn extract_custom_field_id(custom_field: &NewCustomField) -> i64 {
+        match custom_field {
             NewCustomField::NewItemTwo { id, .. } => *id,
             NewCustomField::NewItemMultiple { id, .. } => *id,
         }
@@ -232,7 +232,7 @@ fn test_newissue() {
         println!("{:?}", field);
     }
 
-    issue.set_customer_field_value(1, "modify");
+    issue.set_custom_field_value(1, "modify");
     for field in issue.issue.custom_fields.iter() {
         match field {
             NewCustomField::NewItemTwo { id, value } => println!("{}", value),
