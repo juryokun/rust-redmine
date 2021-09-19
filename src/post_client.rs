@@ -7,24 +7,39 @@ pub struct PostClient {
     // user: String,
     // password: String,
     data: NewIssue,
+    cert_file_path: String,
+    insecure: bool,
 }
 
 impl PostClient {
     pub fn builder() -> PostClientBuilder {
         PostClientBuilder::default()
     }
-    pub async fn send(self) {
-        let client = reqwest::Client::new();
+    pub async fn send(self) -> Result<String, Box<dyn std::error::Error>> {
+        let client = match self.cert_file_path.is_empty() {
+            true => reqwest::Client::builder()
+                .danger_accept_invalid_certs(self.insecure)
+                .build()?,
+            false => reqwest::Client::builder()
+                .add_root_certificate(self.get_cert()?)
+                .build()?,
+        };
 
         let response = client
             .post(self.url)
             .json(&self.data)
             .header("X-Redmine-API-Key", self.api_key)
             .send()
-            .await
-            .unwrap();
-        let result = response.text().await;
-        println!("{:?}", result);
+            .await?;
+        let result = response.text().await?;
+        Ok(result)
+    }
+    fn get_cert(&self) -> Result<reqwest::Certificate, Box<dyn std::error::Error>> {
+        use std::io::Read;
+        let mut buf = Vec::new();
+        std::fs::File::open(self.cert_file_path.clone())?.read_to_end(&mut buf)?;
+        let cert = reqwest::Certificate::from_der(&buf)?;
+        Ok(cert)
     }
 }
 
@@ -35,11 +50,16 @@ pub struct PostClientBuilder {
     // user: String,
     // password: String,
     data: NewIssue,
+    cert_file_path: String,
+    insecure: bool,
 }
 
 impl PostClientBuilder {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            insecure: false,
+            ..Self::default()
+        }
     }
     pub fn url(mut self, url: impl Into<String>) -> Self {
         self.url = url.into();
@@ -47,6 +67,10 @@ impl PostClientBuilder {
     }
     pub fn key(mut self, key: impl Into<String>) -> Self {
         self.api_key = key.into();
+        self
+    }
+    pub fn data(mut self, data: NewIssue) -> Self {
+        self.data = data;
         self
     }
     // pub fn user(mut self, user: impl Into<String>) -> Self {
@@ -64,12 +88,14 @@ impl PostClientBuilder {
             // user: self.user,
             // password: self.password,
             data: self.data,
+            cert_file_path: self.cert_file_path,
+            insecure: self.insecure,
         }
     }
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
-struct NewIssue {
+pub struct NewIssue {
     issue: NewIssueContent,
 }
 
@@ -91,13 +117,80 @@ struct NewIssueContent {
 #[serde(untagged)]
 enum NewCustomField {
     NewItemTwo { id: i64, value: String },
-    NewItemThree { id: i64, value: Vec<String> },
+    NewItemMultiple { id: i64, value: Vec<String> },
 }
 
 impl NewIssue {
-    fn new() -> Self {
+    pub fn new() -> Self {
+        // Self::default()
         Self {
             issue: NewIssueContent::new(),
+        }
+    }
+    pub fn set_project_id(&mut self, project_id: i64) {
+        self.issue.project_id = project_id;
+    }
+    pub fn set_tracker_id(&mut self, tracker_id: i64) {
+        self.issue.tracker_id = tracker_id;
+    }
+    pub fn set_status_id(&mut self, status_id: i64) {
+        self.issue.status_id = status_id;
+    }
+    pub fn set_priority_id(&mut self, priority_id: i64) {
+        self.issue.priority_id = priority_id;
+    }
+    pub fn set_subject(&mut self, subject: impl Into<String>) {
+        self.issue.subject = subject.into();
+    }
+    pub fn set_description(&mut self, description: impl Into<String>) {
+        self.issue.description = description.into();
+    }
+    pub fn set_fixed_version_id(&mut self, fixed_version_id: i64) {
+        self.issue.fixed_version_id = fixed_version_id;
+    }
+    pub fn set_is_private(&mut self, is_private: bool) {
+        self.issue.is_private = is_private;
+    }
+    pub fn set_estimated_hours(&mut self, estimated_hours: i64) {
+        self.issue.estimated_hours = estimated_hours;
+    }
+    pub fn set_customer_field_value(&mut self, field_id: i64, field_value: impl Into<String>) {
+        let customer_field = NewCustomField::NewItemTwo {
+            id: field_id,
+            value: field_value.into(),
+        };
+        self.update_customer_field(customer_field);
+    }
+    pub fn set_customer_field_multiple_value(
+        &mut self,
+        field_id: i64,
+        field_values: Vec<impl Into<String>>,
+    ) {
+        let customer_field = NewCustomField::NewItemMultiple {
+            id: field_id,
+            value: field_values.into_iter().map(|x| x.into()).collect(),
+        };
+        self.update_customer_field(customer_field);
+    }
+    fn update_customer_field(&mut self, customer_field: NewCustomField) {
+        let field_id = NewIssue::extract_customer_field_id(&customer_field);
+
+        let mut target_id: isize = -1;
+        for (i, field) in self.issue.custom_fields.iter().enumerate() {
+            let id = NewIssue::extract_customer_field_id(field);
+            if id == field_id {
+                target_id = i as isize;
+                break;
+            }
+        }
+        if target_id != -1 {
+            self.issue.custom_fields[target_id as usize] = customer_field;
+        }
+    }
+    fn extract_customer_field_id(customer_field: &NewCustomField) -> i64 {
+        match customer_field {
+            NewCustomField::NewItemTwo { id, .. } => *id,
+            NewCustomField::NewItemMultiple { id, .. } => *id,
         }
     }
 }
@@ -114,10 +207,37 @@ impl NewIssueContent {
             fixed_version_id: 1,
             is_private: false,
             estimated_hours: 4,
-            custom_fields: vec![NewCustomField::NewItemTwo {
-                id: 1,
-                value: "あいう".to_string(),
-            }],
+            custom_fields: vec![
+                NewCustomField::NewItemTwo {
+                    id: 1,
+                    value: "あいう".to_string(),
+                },
+                NewCustomField::NewItemMultiple {
+                    id: 2,
+                    value: vec!["abc".to_string(), "def".to_string()],
+                },
+            ],
         }
+    }
+}
+
+#[test]
+fn test_newissue() {
+    let mut issue = NewIssue::new();
+    for field in issue.issue.custom_fields.iter() {
+        match field {
+            NewCustomField::NewItemTwo { id, value } => println!("{}", value),
+            NewCustomField::NewItemMultiple { id, value } => println!("{:?}", value),
+        }
+        println!("{:?}", field);
+    }
+
+    issue.set_customer_field_value(1, "modify");
+    for field in issue.issue.custom_fields.iter() {
+        match field {
+            NewCustomField::NewItemTwo { id, value } => println!("{}", value),
+            NewCustomField::NewItemMultiple { id, value } => println!("{:?}", value),
+        }
+        println!("{:?}", field);
     }
 }
