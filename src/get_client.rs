@@ -140,7 +140,7 @@ enum CustomField {
         name: String,
         value: String,
     },
-    ItemThree {
+    ItemMultiple {
         id: i64,
         name: String,
         multiple: bool,
