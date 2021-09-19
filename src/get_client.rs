@@ -7,6 +7,7 @@ pub struct GetClient {
     user: String,
     password: String,
     cert_file_path: String,
+    insecure: bool,
 }
 
 impl GetClient {
@@ -15,7 +16,9 @@ impl GetClient {
     }
     pub async fn send(self) -> Result<Issues, Box<dyn std::error::Error>> {
         let client = match self.cert_file_path.is_empty() {
-            true => reqwest::Client::new(),
+            true => reqwest::Client::builder()
+                .danger_accept_invalid_certs(self.insecure)
+                .build()?,
             false => reqwest::Client::builder()
                 .add_root_certificate(self.get_cert()?)
                 .build()?,
@@ -47,11 +50,15 @@ pub struct GetClientBuilder {
     user: String,
     password: String,
     cert_file_path: String,
+    insecure: bool,
 }
 
 impl GetClientBuilder {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            insecure: false,
+            ..Self::default()
+        }
     }
     pub fn url(mut self, url: impl Into<String>) -> Self {
         self.url = url.into();
@@ -65,8 +72,16 @@ impl GetClientBuilder {
         self.user = user.into();
         self
     }
-    pub fn password(mut self, password: String) -> Self {
-        self.password = password;
+    pub fn password(mut self, password: impl Into<String>) -> Self {
+        self.password = password.into();
+        self
+    }
+    pub fn cert_file_path(mut self, cert_file_path: impl Into<String>) -> Self {
+        self.cert_file_path = cert_file_path.into();
+        self
+    }
+    pub fn insecure(mut self, insecure: bool) -> Self {
+        self.insecure = insecure;
         self
     }
     pub fn build(self) -> GetClient {
@@ -76,6 +91,7 @@ impl GetClientBuilder {
             user: self.user,
             password: self.password,
             cert_file_path: self.cert_file_path,
+            insecure: self.insecure,
         }
     }
 }
