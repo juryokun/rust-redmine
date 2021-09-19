@@ -185,6 +185,8 @@ impl NewIssue {
         }
         if target_id != -1 {
             self.issue.custom_fields[target_id as usize] = custom_field;
+        } else {
+            self.issue.custom_fields.push(custom_field);
         }
     }
     fn extract_custom_field_id(custom_field: &NewCustomField) -> i64 {
