@@ -12,10 +12,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_request() {
-        let url = "http://localhost:8000/projects/prj1/issues.json";
+        let url = "http://localhost:8000";
         let key = "d1b2c51db3fa1d6277b2e775447b05a58a1b5011";
-        let client = GetClient::builder().url(url).key(key).build();
-        let response = client.send().await;
+        let client = GetClient::builder().base_url(url).key(key).build();
+        let response = client.get_project("prj1").await;
         assert!(response.is_ok());
     }
 }

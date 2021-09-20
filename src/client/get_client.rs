@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone)]
 pub struct GetClient {
-    url: String,
+    base_url: String,
     api_key: String,
     // user: String,
     // password: String,
@@ -14,7 +14,39 @@ impl GetClient {
     pub fn builder() -> GetClientBuilder {
         GetClientBuilder::default()
     }
-    pub async fn send(self) -> Result<Issues, Box<dyn std::error::Error>> {
+    pub async fn get_project(
+        self,
+        project: impl Into<String>,
+    ) -> Result<Issues, Box<dyn std::error::Error>> {
+        let add_url = "/projects/".to_string() + &project.into() + "/issues.json";
+        let request_url = self.base_url.trim_end_matches("/").to_string() + &add_url;
+        let result = self.send(request_url).await?;
+
+        let issues: Issues = serde_json::from_str(&result)?;
+        Ok(issues)
+    }
+    pub async fn get_issue(self, issue_id: i64) -> Result<Issue, Box<dyn std::error::Error>> {
+        let add_url = "/issues/".to_string() + &issue_id.to_string() + ".json";
+        let request_url = self.base_url.trim_end_matches("/").to_string() + &add_url;
+        let result = self.send(request_url).await?;
+
+        let issue: Issue = serde_json::from_str(&result)?;
+        Ok(issue)
+    }
+    pub async fn get_query(
+        self,
+        project: impl Into<String>,
+        query_id: i64,
+    ) -> Result<Issues, Box<dyn std::error::Error>> {
+        let add_url =
+            "/".to_string() + &project.into() + "/issues.json?query_id=" + &query_id.to_string();
+        let request_url = self.base_url.trim_end_matches("/").to_string() + &add_url;
+        let result = self.send(request_url).await?;
+
+        let issues: Issues = serde_json::from_str(&result)?;
+        Ok(issues)
+    }
+    async fn send(self, url: String) -> Result<String, Box<dyn std::error::Error>> {
         let client = match self.cert_file_path.is_empty() {
             true => reqwest::Client::builder()
                 .danger_accept_invalid_certs(self.insecure)
@@ -25,14 +57,12 @@ impl GetClient {
         };
 
         let response = client
-            .get(self.url)
+            .get(url)
             .header("X-Redmine-API-Key", self.api_key)
             .send()
             .await?;
         let result = response.text().await?;
-
-        let issues: Issues = serde_json::from_str(&result)?;
-        Ok(issues)
+        Ok(result)
     }
     fn get_cert(&self) -> Result<reqwest::Certificate, Box<dyn std::error::Error>> {
         use std::io::Read;
@@ -45,7 +75,7 @@ impl GetClient {
 
 #[derive(Debug, Default)]
 pub struct GetClientBuilder {
-    url: String,
+    base_url: String,
     api_key: String,
     // user: String,
     // password: String,
@@ -60,8 +90,8 @@ impl GetClientBuilder {
             ..Self::default()
         }
     }
-    pub fn url(mut self, url: impl Into<String>) -> Self {
-        self.url = url.into();
+    pub fn base_url(mut self, base_url: impl Into<String>) -> Self {
+        self.base_url = base_url.into();
         self
     }
     pub fn key(mut self, key: impl Into<String>) -> Self {
@@ -86,7 +116,7 @@ impl GetClientBuilder {
     }
     pub fn build(self) -> GetClient {
         GetClient {
-            url: self.url,
+            base_url: self.base_url,
             api_key: self.api_key,
             // user: self.user,
             // password: self.password,
@@ -98,14 +128,19 @@ impl GetClientBuilder {
 
 #[derive(Debug, Deserialize)]
 pub struct Issues {
-    issues: Vec<Issue>,
+    issues: Vec<IssueContent>,
     total_count: i64,
     offset: i64,
     limit: i64,
 }
 
 #[derive(Debug, Deserialize)]
-struct Issue {
+pub struct Issue {
+    issue: IssueContent,
+}
+
+#[derive(Debug, Deserialize)]
+struct IssueContent {
     id: i64,
     project: ItemOne,
     tracker: ItemOne,
@@ -147,17 +182,4 @@ enum CustomField {
         multiple: bool,
         value: Vec<String>,
     },
-}
-
-#[tokio::test]
-#[ignore]
-async fn test_struct() {
-    let url = "http://localhost:8000/projects/prj1/issues.json";
-    let key = "d1b2c51db3fa1d6277b2e775447b05a58a1b5011";
-    let client = GetClient::builder().url(url).key(key).build();
-    let response = client.send().await;
-    match response {
-        Ok(rel) => println!("{:?}", rel),
-        _ => println!("no"),
-    }
 }
