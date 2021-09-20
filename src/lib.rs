@@ -1,7 +1,6 @@
-pub mod get_client;
-pub mod post_client;
-pub use get_client::*;
-pub use post_client::*;
+mod client;
+pub use client::get_client::*;
+pub use client::post_client::*;
 
 #[cfg(test)]
 mod tests {
