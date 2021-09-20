@@ -124,9 +124,6 @@ enum NewCustomField {
 impl NewIssue {
     pub fn new() -> Self {
         Self::default()
-        // Self {
-        //     issue: NewIssueContent::new(),
-        // }
     }
     pub fn set_project_id(&mut self, project_id: i64) {
         self.issue.project_id = project_id;
@@ -199,64 +196,4 @@ impl NewIssue {
             NewCustomField::NewItemMultiple { id, .. } => *id,
         }
     }
-}
-
-impl NewIssueContent {
-    fn new() -> Self {
-        Self::default()
-        //     Self {
-        //         project_id: 1,
-        //         tracker_id: 1,
-        //         status_id: 1,
-        //         priority_id: 1,
-        //         subject: "postテスト".to_string(),
-        //         description: "説明分".to_string(),
-        //         fixed_version_id: 1,
-        //         is_private: false,
-        //         estimated_hours: 4,
-        //         custom_fields: vec![
-        //             NewCustomField::NewItemTwo {
-        //                 id: 1,
-        //                 value: "あいう".to_string(),
-        //             },
-        //             NewCustomField::NewItemMultiple {
-        //                 id: 2,
-        //                 value: vec!["abc".to_string(), "def".to_string()],
-        //             },
-        //         ],
-        //     }
-    }
-}
-
-#[tokio::test]
-async fn test_newissue() {
-    let mut issue = NewIssue::new();
-    issue.set_description("description");
-    issue.set_project_id(1);
-    issue.set_priority_id(1);
-    issue.set_status_id(1);
-    issue.set_tracker_id(1);
-    issue.set_assigned_to_id(1);
-    issue.set_custom_field_value(2, "あたい１");
-    issue.set_custom_field_multiple_value(1, vec!["1", "3"]);
-    issue.set_subject("pot_request");
-    issue.set_fixed_version_id(1);
-    println!("{:?}", issue);
-
-    // let url = "https://httpbin.org/anything";
-    let url = "http://localhost:8000/projects/prj1/issues.json";
-    let key = "d1b2c51db3fa1d6277b2e775447b05a58a1b5011";
-    let client = PostClient::builder().url(url).key(key).data(issue).build();
-    let response = client.send().await;
-
-    println!("{:?}", response);
-
-    // issue.set_custom_field_value(1, "modify");
-    // for field in issue.issue.custom_fields.iter() {
-    //     match field {
-    //         NewCustomField::NewItemTwo { id, value } => println!("{}", value),
-    //         NewCustomField::NewItemMultiple { id, value } => println!("{:?}", value),
-    //     }
-    //     println!("{:?}", field);
-    // }
 }
