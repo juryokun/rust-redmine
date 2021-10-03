@@ -19,7 +19,7 @@ impl GetClient {
         project: impl Into<String>,
     ) -> Result<Issues, Box<dyn std::error::Error>> {
         let add_url = "/projects/".to_string() + &project.into() + "/issues.json";
-        let request_url = self.base_url.trim_end_matches("/").to_string() + &add_url;
+        let request_url = self.base_url.trim_end_matches('/').to_string() + &add_url;
         let result = self.send(request_url).await?;
 
         let issues: Issues = serde_json::from_str(&result)?;
@@ -27,7 +27,7 @@ impl GetClient {
     }
     pub async fn get_issue(self, issue_id: i64) -> Result<Issue, Box<dyn std::error::Error>> {
         let add_url = "/issues/".to_string() + &issue_id.to_string() + ".json";
-        let request_url = self.base_url.trim_end_matches("/").to_string() + &add_url;
+        let request_url = self.base_url.trim_end_matches('/').to_string() + &add_url;
         let result = self.send(request_url).await?;
 
         let issue: Issue = serde_json::from_str(&result)?;
@@ -40,7 +40,7 @@ impl GetClient {
     ) -> Result<Issues, Box<dyn std::error::Error>> {
         let add_url =
             "/".to_string() + &project.into() + "/issues.json?query_id=" + &query_id.to_string();
-        let request_url = self.base_url.trim_end_matches("/").to_string() + &add_url;
+        let request_url = self.base_url.trim_end_matches('/').to_string() + &add_url;
         let result = self.send(request_url).await?;
 
         let issues: Issues = serde_json::from_str(&result)?;
