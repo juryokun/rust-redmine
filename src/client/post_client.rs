@@ -21,6 +21,7 @@ impl PostClient {
                 .danger_accept_invalid_certs(self.insecure)
                 .build()?,
             false => reqwest::Client::builder()
+                .danger_accept_invalid_certs(self.insecure)
                 .add_root_certificate(self.get_cert()?)
                 .build()?,
         };
@@ -71,6 +72,10 @@ impl PostClientBuilder {
     }
     pub fn data(mut self, data: NewIssue) -> Self {
         self.data = data;
+        self
+    }
+    pub fn insecure(mut self, is_insecure: bool) -> Self {
+        self.insecure = is_insecure;
         self
     }
     // pub fn user(mut self, user: impl Into<String>) -> Self {

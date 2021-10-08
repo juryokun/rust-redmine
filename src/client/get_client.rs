@@ -52,6 +52,7 @@ impl GetClient {
                 .danger_accept_invalid_certs(self.insecure)
                 .build()?,
             false => reqwest::Client::builder()
+                .danger_accept_invalid_certs(self.insecure)
                 .add_root_certificate(self.get_cert()?)
                 .build()?,
         };
@@ -110,8 +111,8 @@ impl GetClientBuilder {
         self.cert_file_path = cert_file_path.into();
         self
     }
-    pub fn insecure(mut self, insecure: bool) -> Self {
-        self.insecure = insecure;
+    pub fn insecure(mut self, is_insecure: bool) -> Self {
+        self.insecure = is_insecure;
         self
     }
     pub fn build(self) -> GetClient {
